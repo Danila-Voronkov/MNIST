@@ -8,7 +8,7 @@ namespace MNIST
   class ConsoleApplication
   {
   	const string fileName = "heft.dat";
-  	public static void WriteDefaultValues(double[,] heft0_1, double[,] heft1_2, double[,] heft2_3, double AllSum, double LearningRate)
+  	public static void WriteDefaultValues(double[,] heft0_1, double[,] heft1_2, double[,] heft2_3, double AllSum, ref double LearningRate)
   	{
   		File.Delete(fileName);
   		using FileStream stream = File.Open(fileName, FileMode.Create);
@@ -69,7 +69,7 @@ namespace MNIST
   			}
 
   			BestWay = reader.ReadDouble();
-  			LearningRate = reader.ReadDouble();
+        LearningRate = reader.ReadDouble();
   		}
   	}
   }
@@ -177,7 +177,7 @@ namespace MNIST
   	}
   	public static void FindError(double[,] L1, double[,] L2, double[,] heft)
   	{
-  		for (int CounterX = 0; CounterX < heft.GetLength(0); ++CounterX)
+  		for (int CounterX = 0; CounterX < heft.GetLength(0) - 1; ++CounterX)
   		{
   			L1[CounterX, 1] = 0;
   			for (int CounterY = 0; CounterY < heft.GetLength(1); ++CounterY)
@@ -220,24 +220,24 @@ namespace MNIST
   	{
   		for (int Counter = 0; Counter < L3.GetLength(0); ++Counter)
   		{
-  			if (label == Counter)
-  			{
-  				Sum += L3[Counter, 1];
-  			}
+  			Sum += Math.Pow(L3[Counter, 1], 2);
   		}
   	}
   	static void Main(string[] args)
   	{
-  		double[,] heft0_1 = new double[784,16];
-  		double[,] heft1_2 = new double[16,16];
-  		double[,] heft2_3 = new double[16,10];
+  		double[,] heft0_1 = new double[785,16];
+  		double[,] heft1_2 = new double[17,16];
+  		double[,] heft2_3 = new double[17,10];
   
-  		double[,] L0 = new double[784, 2];
-  		double[,] L1 = new double[16,2];
-  		double[,] L2 = new double[16,2];
-  		double[,] L3 = new double[10,2];
+  		double[,] L0 = new double[785, 2];
+      L0[784, 0] = 1;
+  		double[,] L1 = new double[17,2];
+      L1[16, 0] = 1;
+      double[,] L2 = new double[17,2];
+      L2[16, 0] = 1;
+      double[,] L3 = new double[10,2];
   
-  		double LearningRate = 1;
+  		double LearningRate = 0.1;
   
   		byte CorrectАnswer = 0;
   
@@ -251,7 +251,7 @@ namespace MNIST
   			GenerationRandomheft(heft0_1);
   			GenerationRandomheft(heft1_2);
   			GenerationRandomheft(heft2_3);
-  			ConsoleApplication.WriteDefaultValues(heft0_1, heft1_2, heft2_3, BestWay, LearningRate);
+  			ConsoleApplication.WriteDefaultValues(heft0_1, heft1_2, heft2_3, BestWay, ref LearningRate);
   		}
   
   		ConsoleApplication.DisplayValues(heft0_1, heft1_2, heft2_3, ref BestWay, ref LearningRate);
@@ -278,25 +278,36 @@ namespace MNIST
   				Sum = 0;
   			}
 
-        NewWay = AllSum / 600;
+        NewWay = AllSum / 6000;
         AllSum = 0;
         Console.WriteLine(NewWay + " %");
-  
-  			if ((BestWay >= NewWay) & (BestWay != 0))
+
+        ConsoleApplication.WriteDefaultValues(heft0_1, heft1_2, heft2_3, BestWay, ref LearningRate);
+
+        if ((BestWay > NewWay) & (BestWay != 0))
   			{
   				BestWay = NewWay;
 
-  				ConsoleApplication.WriteDefaultValues(heft0_1, heft1_2, heft2_3, BestWay, LearningRate);
-  				Console.WriteLine("Лучший резутьтат был записан. LearningRate = " + LearningRate);
+          LearningRate += 0.01;
+
+          if (LearningRate > 1)
+          {
+            LearningRate = 0.1;
+          }
+
+          ConsoleApplication.WriteDefaultValues(heft0_1, heft1_2, heft2_3, BestWay, ref LearningRate);
+          Console.WriteLine("Лучший резутьтат был записан. LearningRate = " + LearningRate);
   			} else {
+
+          //Random rnd = new Random();
           LearningRate -= 0.01;
 
-          if (LearningRate <= 0)
-          {
-            LearningRate = 1;
-          }
-          double i = 0; //Временная заглушка, пока не исправлю
-          ConsoleApplication.DisplayValues(heft0_1, heft1_2, heft2_3,ref BestWay, ref i);
+					if (LearningRate <= 0.001)
+					{
+						LearningRate = 0.1;
+					}
+
+          ConsoleApplication.DisplayValues(heft0_1, heft1_2, heft2_3, ref BestWay, ref LearningRate);
   				Console.WriteLine("Результат стал хуже. Меняем коэффициент обучения. LearningRate = " + LearningRate + ". Лучший результат = " + BestWay + " %");
   			}
   		}
